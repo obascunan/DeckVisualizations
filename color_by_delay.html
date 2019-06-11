@@ -123,7 +123,7 @@
 
     function getGeoJSONLayer(data, selectedFeature) {
       return new GeoJsonLayer({
-              data: 'https://webspace.ocad.ca/~3158873/ttc_zones.geojson',
+              data: 'https://obascunan.github.io/DeckVisualizations/ttc_zones.geojson',
               opacity: 0.8,
               stroked: true,
               filled: true,
@@ -186,7 +186,7 @@
       deckgl.setProps({ layers: [geojsonLayer] });
     }
 
-    d3.csv('https://webspace.ocad.ca/~3158873/am_tran_time.csv')
+    d3.csv('https://obascunan.github.io/DeckVisualizations/am_tran_time.csv')
      .then(response => {
      distance_data = response.map(function( item ) {
            var newItem = {};
