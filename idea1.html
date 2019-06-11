@@ -1,0 +1,78 @@
+<html>
+  <head>
+    <title>deck.gl Viewport Transition Example</title>
+
+    <script src="https://unpkg.com/deck.gl@^7.0.0/dist.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js"></script>
+
+    <style type="text/css">
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+      }
+
+      #control-panel {
+        font-size: 12px;
+        font-family: Helvetica, Arial, sans-serif;
+        position: absolute;
+        background: #fff;
+        top: 0;
+        left: 0;
+        margin: 12px;
+        padding: 20px;
+        line-height: 2;
+        z-index: 1;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <div id="control-panel">
+    </div>
+  </body>
+
+  <script type="text/javascript">
+
+    const {DeckGL, GeoJsonLayer, FlyToInterpolator} = deck;
+
+    // Data
+    const DATA_URL = '.sample_data.geojson';
+
+    // Deck canvas
+    const deckgl = new DeckGL({
+      mapboxApiAccessToken: 'pk.eyJ1Ijoibm90Ymxvb20iLCJhIjoiY2pyaWVua3gzMDA4ODN5bXl0ZTU1ejgyOCJ9.e6_za1_NqG7xddmPCXxBAQ',
+      mapStyle: 'mapbox://styles/mapbox/dark-v9',
+      viewState: {
+          latitude: 43.6529,
+          longitude: -79.3849,
+          zoom: 13,
+          maxZoom: 16,
+          pitch: 45,
+          bearing: 0
+      },
+      layers: [
+        new GeoJsonLayer({
+          id: 'geojson',
+          DATA_URL,
+          opacity: 0.8,
+          stroked: false,
+          filled: true,
+          extruded: true,
+          wireframe: false,
+          fp64: true,
+          getElevation: f=> 10,// f => Math.sqrt(f.properties.valuePerSqm) * 10,
+          getFillColor: f => COLOR_SCALE(0.4),//f => COLOR_SCALE(f.properties.growth),
+          getLineColor: [255, 255, 255],
+          pickable: true,
+          onHover: this._onHover
+        })
+      ]
+    });
+
+  
+  </script>
+</html>

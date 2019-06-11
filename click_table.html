@@ -1,0 +1,312 @@
+<html>
+  <head>
+    <title>deck.gl ArcLayer Example</title>
+
+    <script src="https://unpkg.com/deck.gl@^7.0.0/dist.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.7/dist/js/tabulator.min.js"></script>
+
+
+    <style type="text/css">
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 5vw 10vw 0 10vw;
+      }
+      #tooltip:empty {
+        display: none;
+      }
+      #tooltip {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        position: absolute;
+        padding: 4px;
+        margin: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        max-width: 300px;
+        font-size: 10px;
+        z-index: 9;
+        pointer-events: none;
+      }
+      #mapContainer{
+        width: 80vw;
+        height: 300px;
+      }
+      #example-table{
+        width: 80vw;
+        height: auto;
+        margin-top: 5vw;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="tooltip"></div>
+    <div id="mapContainer"></div>
+    <div id="example-table"></div>
+
+  </body>
+
+  <script type="text/javascript">
+
+    let tran_time = {};
+    let data;
+
+    const {DeckGL, GeoJsonLayer, ArcLayer} = deck;
+
+    const inFlowColors = [
+      [255, 255, 204],
+      [199, 233, 180],
+      [127, 205, 187],
+      [65, 182, 196],
+      [29, 145, 192],
+      [34, 94, 168],
+      [12, 44, 132]
+    ];
+
+    const outFlowColors = [
+      [255, 255, 178],
+      [254, 217, 118],
+      [254, 178, 76],
+      [253, 141, 60],
+      [252, 78, 42],
+      [227, 26, 28],
+      [177, 0, 38]
+    ];
+
+    const geojsonLayer = new GeoJsonLayer({
+          data: 'https://webspace.ocad.ca/~3158873/ttc_zones.geojson',
+          opacity: 0.8,
+          stroked: false,
+          filled: true,
+          extruded: true,
+          wireframe: true,
+          fp64: true,
+
+          getElevation: 10,//getElevationFromData, //f => 10,
+          getFillColor: f => [200, 200, 200],
+          getLineColor: [255, 255, 255],
+
+          pickable: true,
+          onHover: updateTooltip,
+          onClick: pickZone
+    });
+
+    const deckgl = new DeckGL({
+      mapboxApiAccessToken: 'pk.eyJ1Ijoibm90Ymxvb20iLCJhIjoiY2pyaWVua3gzMDA4ODN5bXl0ZTU1ejgyOCJ9.e6_za1_NqG7xddmPCXxBAQ',
+      mapStyle: 'mapbox://styles/mapbox/light-v9',
+      container: mapContainer,
+      latitude: 43.6529,
+      longitude: -79.3849,
+      zoom: 11,
+      maxZoom: 15,
+      pitch: 30,
+      bearing: 30,
+      layers: [geojsonLayer]
+    });
+
+
+
+    function getArcLayer(data, selectedFeature) {
+
+      console.log(selectedFeature);
+      // const {flows, centroid} = selectedFeature;
+      // const arcs = Object.keys(flows).map(toId => {
+      // const f = data.features[toId];
+      // return {
+      //   source: centroid,
+      //   target: f.properties.centroid,
+      //   value: flows[toId]
+      // };
+      // });
+
+      // const scale = d3.scaleQuantile()
+      //   .domain(arcs.map(a => Math.abs(a.value)))
+      //   .range(inFlowColors.map((c, i) => i));
+      //
+      //   arcs.forEach(a => {
+      //   a.gain = Math.sign(a.value);
+      //   a.quantile = scale(Math.abs(a.value));
+      // });
+      // console.log("data");
+      // console.log(data);
+        return new ArcLayer({
+        id: 'arc',
+        data: selectedFeature,
+        // getFilterValue: d => d.origin_id,
+        // filterRange: 1,
+        getSourcePosition: d => d.origin_pos,
+        getTargetPosition: d => d.destiny_pos,
+        getSourceColor: d => [d.value, 140, 255-d.value],
+        getTargetColor: d => [d.value, 140, 255-d.value],
+        strokeWidth: 1
+      });
+    }
+
+    function getGeoJSONLayer(data, selectedFeature) {
+
+      console.log(selectedFeature);
+      // const {flows, centroid} = selectedFeature;
+      // const arcs = Object.keys(flows).map(toId => {
+      // const f = data.features[toId];
+      // return {
+      //   source: centroid,
+      //   target: f.properties.centroid,
+      //   value: flows[toId]
+      // };
+      // });
+
+      // const scale = d3.scaleQuantile()
+      //   .domain(arcs.map(a => Math.abs(a.value)))
+      //   .range(inFlowColors.map((c, i) => i));
+      //
+      //   arcs.forEach(a => {
+      //   a.gain = Math.sign(a.value);
+      //   a.quantile = scale(Math.abs(a.value));
+      // });
+      // console.log("data");
+      // console.log(data);
+    //   return new GeoJsonLayer({
+    //    id: 'geojson',
+    //    data: selectedFeature,
+    //    opacity: 0.8,
+    //    stroked: false,
+    //    filled: true,
+    //    extruded: true,
+    //    wireframe: true,
+    //    fp64: true,
+    //
+    //    getElevation: f => Math.sqrt(f.properties.valuePerSqm) * 10,
+    //    getFillColor: f => colorScale(f.properties.growth),
+    //    getLineColor: [255, 255, 255],
+    //
+    //    pickable: true,
+    //    onHover: updateTooltip
+    //   });
+    // }
+
+        return new ArcLayer({
+        id: 'arc',
+        data: selectedFeature,
+        // getFilterValue: d => d.origin_id,
+        // filterRange: 1,
+        getSourcePosition: d => d.origin_pos,
+        getTargetPosition: d => d.destiny_pos,
+        getSourceColor: d => [d.value, 140, 255-d.value],
+        getTargetColor: d => [d.value, 140, 255-d.value],
+        strokeWidth: 1
+      });
+    }
+
+    function pickZone({x, y, object}) {
+        redrawLayers(data, null, object.properties.GTA06);
+    }
+
+    function updateTooltip({x, y, object}) {
+    //  console.log(object);
+      const tooltip = document.getElementById('tooltip');
+      if (object) {
+        tooltip.style.top = `${y}px`;
+        tooltip.style.left = `${x}px`;
+        tooltip.innerText = object.properties.GTA06;
+      } else tooltip.innerText = '';
+    }
+
+    function getElevationFromData(f) {
+      const elevation =  data.find(f => f.origin_id == id )// && f.)
+    }
+
+    function redrawLayers(data, selectedFeature, id) {
+      selectedFeature = selectedFeature || data.filter(f => f.origin_id == id || f.destiny_id == id);
+      const arcLayer = getArcLayer(data, selectedFeature);
+      deckgl.setProps({ layers: [geojsonLayer, arcLayer] });
+      renderTable(selectedFeature);
+    }
+
+    function renderLayers(data, selectedFeature) {
+
+      selectedFeature = selectedFeature || data.filter(f => f.origin_id == 1 );
+      const arcLayer = getArcLayer(data, selectedFeature);
+      // const countyLayer = new GeoJsonLayer({
+      //   id: 'geojson',
+      //   data,
+      //   stroked: false,
+      //   filled: true,
+      //   autoHighlight: true,
+      //   pickable: true,
+      //   getFillColor: () => [0, 0, 0, 0],
+      //   onClick: info => renderLayers(data, info.object),
+      //   onHover: updateTooltip,
+      // });
+
+      //deckgl.setProps({ layers: [countyLayer, arcLayer] });
+      deckgl.setProps({ layers: [geojsonLayer, arcLayer] });
+    }
+
+    // d3.csv('https://webspace.ocad.ca/~3158873/am_tran_time.csv')
+    //     .then(response => {
+    //
+    //     // sort transite time
+    //     tran_time = {};
+    //
+    //     response.forEach(a => {
+    //       const r = (incidents[a.year] = incidents[a.year] || {});
+    //       const f = (fatalities[a.year] = fatalities[a.year] || {});
+    //       const key = getKey(a);
+    //       r[key] = a.incidents;
+    //       f[key] = a.fatalities;
+    //     });
+    //
+    //     year = accidents[0].year;
+    //
+    //     initInputs(d3.select('#options'));
+    //     redraw();
+    //   });
+
+    d3.csv('https://webspace.ocad.ca/~3158873/am_tran_time.csv')
+     .then(response => {
+     data = response.map(function( item ) {
+           var newItem = {};
+           newItem.origin_id = item.origin;
+           newItem.destiny_id = item.destiny;
+           newItem.value = item.values;
+           newItem.destiny_pos = [Number(item.longdest), Number(item.latdest)];
+           newItem.origin_pos = [Number(item.longorig), Number(item.latorig)];
+           // console.log(newItem.destiny_pos[0]);
+           // console.log(newItem.destiny_pos[1]);
+           // console.log(newItem.origin_pos[0]);
+           // console.log(newItem.origin_pos[1]);
+           return newItem;
+     });
+
+     renderLayers(data);
+    });
+    function renderTable(tabledata){
+      var table = new Tabulator("#example-table", {
+      	data:tabledata,           //load row data from array
+      	layout:"fitColumns",      //fit columns to width of table
+      	responsiveLayout:"hide",  //hide columns that dont fit on the table
+      	tooltips:true,            //show tool tips on cells
+      	addRowPos:"top",          //when adding a new row, add it to the top of the table
+      	history:true,             //allow undo and redo actions on the table
+      	pagination:"local",       //paginate the data
+      	paginationSize:7,         //allow 7 rows per page of data
+      	movableColumns:true,      //allow column order to be changed
+      	resizableRows:true,       //allow row order to be changed
+      	initialSort:[             //set the initial sort order of the data
+      		{column:"origin_id", dir:"asc"},
+      	],
+      	columns:[                 //define the table columns
+      		{title:"Origin ID", field:"origin_id", editor:"input"},
+          {title:"Destiny ID", field:"destiny_id", editor:"input"},
+          {title:"Time", field:"value", editor:"input"},
+      		],
+      });
+    }
+
+  </script>
+</html>

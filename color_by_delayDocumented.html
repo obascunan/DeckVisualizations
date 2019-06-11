@@ -1,0 +1,187 @@
+<html>
+  <head>
+    <title>deck.gl ArcLayer Example</title>
+
+    <script src="https://unpkg.com/deck.gl@^7.0.0/dist.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js"></script>
+
+    <style type="text/css">
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+      }
+      #tooltip:empty {
+        display: none;
+      }
+      #tooltip {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        position: absolute;
+        padding: 4px;
+        margin: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        max-width: 300px;
+        font-size: 10px;
+        z-index: 9;
+        pointer-events: none;
+      }
+      #control-panel {
+      position: absolute;
+      background: #fff;
+      top: 0;
+      left: 0;
+      margin: 12px;
+      padding: 20px;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 1;
+    }
+    </style>
+  </head>
+
+  <body>
+    <div id="control-panel">
+     <div>
+       <label>Time Threshold</label>
+       <input id="coverage" type="range" min="0" max="1000" step="1" value="150"></input>
+       <span id="coverage-value">150</span>
+     </div>
+    <div id="tooltip"></div>
+  </body>
+
+  <script type="text/javascript">
+
+
+    let currentID = 0; // Curent selected Zone ID
+    let distance_data; // Global declaration for the am_tran_time.csv data mapping.
+    let data_selected = {};
+    let coverage_value = 150; // Here we'll store the value for the 'coverage' input.
+
+    //defining deck and it's required modules, in this case the GeoJsonLayer.
+    const {DeckGL, GeoJsonLayer} = deck;
+
+    const deckgl = new DeckGL({
+      mapboxApiAccessToken: 'pk.eyJ1Ijoibm90Ymxvb20iLCJhIjoiY2pyaWVua3gzMDA4ODN5bXl0ZTU1ejgyOCJ9.e6_za1_NqG7xddmPCXxBAQ',
+      mapStyle: 'mapbox://styles/mapbox/light-v9',
+      latitude: 43.6529,
+      longitude: -79.3849,
+      zoom: 8,
+      maxZoom: 15,
+      pitch: 30,
+      bearing: 30,
+      layers: []  //Empty layers, we add it after loading the data.
+    });
+    // array of input ids from html
+    const OPTIONS = ['coverage'];
+
+    // Re-render layer when inputs change.
+    OPTIONS.forEach(key => {
+      document.getElementById(key).oninput = renderLayer;
+    });
+
+
+    function renderLayer () {
+      const options = {};
+      OPTIONS.forEach(key => {
+        const value = document.getElementById(key).value;
+        document.getElementById(key + '-value').innerHTML = value;
+        options[key] = Number(value);
+      });
+
+      coverage_value = document.getElementById('coverage').value;
+      redrawLayers(distance_data, currentID);
+
+    };
+
+
+
+
+    function getGeoJSONLayer(data, selectedFeature) {
+      return new GeoJsonLayer({
+              data: 'https://webspace.ocad.ca/~3158873/ttc_zones.geojson',
+              opacity: 0.8,
+              stroked: true,
+              filled: true,
+              extruded: true,
+              wireframe: true,
+              fp64: true,
+              parameters: {
+                    depthTest: false
+                  },
+              getElevation: 1,
+              getFillColor: getColorFromData,
+              getLineColor: [255, 255, 255],
+              updateTriggers: {
+                  getFillColor: [currentID, coverage_value]
+                 },
+              pickable: true,
+              onHover: updateTooltip,
+              onClick: pickZone
+        });
+    }
+
+    function getColorFromData(f) {
+      let timeValue =  data_selected.find(d => (d.origin_id == currentID && d.destiny_id == f.properties.GTA06) || (d.destiny_id == currentID && d.origin_id == f.properties.GTA06));
+
+      if(timeValue){
+        //console.log(timeValue.value );
+        if( Number(timeValue.value) < Number(coverage_value) ){
+          return [250, 40, 40];
+        }else{
+          return [100, 40, 40];
+        }
+
+      }else {
+        return [100,100,100];
+      }
+    }
+    function pickZone({x, y, object}) {
+      redrawLayers(distance_data, object.properties.GTA06);
+    }
+
+    function updateTooltip({x, y, object}) {
+    //  console.log(object);
+      const tooltip = document.getElementById('tooltip');
+      if (object) {
+        tooltip.style.top = `${y}px`;
+        tooltip.style.left = `${x}px`;
+        tooltip.innerText = object.properties.GTA06;
+      } else tooltip.innerText = '';
+    }
+
+    function redrawLayers(data, id) {
+      if(currentID != id){
+        currentID = id;
+        data_selected = distance_data.filter(f => (f.origin_id == currentID || f.destiny_id == currentID));
+      }
+      const geojsonLayer = getGeoJSONLayer(data_selected);
+      deckgl.setProps({ layers: [geojsonLayer] });
+    }
+
+    // function renderLayers(data, selectedFeature) {
+    //   data_selected = distance_data.filter(f => (f.origin_id == currentID || f.destiny_id == currentID));
+    //   const geojsonLayer = getGeoJSONLayer(data_selected, selectedFeature);
+    //   deckgl.setProps({ layers: [geojsonLayer] });
+    // }
+
+    d3.csv('https://webspace.ocad.ca/~3158873/am_tran_time.csv')
+     .then(response => {
+     distance_data = response.map(function( item ) {
+           var newItem = {};
+           newItem.origin_id = item.origin;
+           newItem.destiny_id = item.destiny;
+           newItem.value = item.values;
+           newItem.destiny_pos = [Number(item.longdest), Number(item.latdest)];
+           newItem.origin_pos = [Number(item.longorig), Number(item.latorig)];
+           return newItem;
+     });
+
+     redrawLayers(distance_data, 1);
+    });
+
+
+  </script>
+</html>

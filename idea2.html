@@ -1,0 +1,137 @@
+<html>
+  <head>
+    <title>deck.gl GeoJsonLayer (Polygon) Example</title>
+
+    <script src="https://unpkg.com/deck.gl@^7.0.0/dist.min.js"></script>
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js"></script>
+
+    <style type="text/css">
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+      }
+      #tooltip:empty {
+        display: none;
+      }
+      #tooltip {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 11px;
+        position: absolute;
+        padding: 4px;
+        margin: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        max-width: 300px;
+        font-size: 10px;
+        z-index: 9;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container" style="width: 80vw; height: 50vh;"></div>
+    <div id="tooltip"></div>
+  </body>
+
+  <script type="text/javascript">
+
+    const {DeckGL, GeoJsonLayer, ArcLayer} = deck;
+
+    const COLOR_SCALE = [
+      // negative
+      [65, 182, 196],
+      [127, 205, 187],
+      [199, 233, 180],
+      [237, 248, 177],
+
+      // positive
+      [255, 255, 204],
+      [255, 237, 160],
+      [254, 217, 118],
+      [254, 178, 76],
+      [253, 141, 60],
+      [252, 78, 42],
+      [227, 26, 28],
+      [189, 0, 38],
+      [128, 0, 38]
+    ];
+
+    const geojsonLayer = new GeoJsonLayer({
+      id: 'zones-layer',
+      data: 'https://webspace.ocad.ca/~3158873/ttc_zones.geojson',
+      opacity: 0.8,
+      stroked: false,
+      filled: true,
+      extruded: true,
+      wireframe: true,
+      fp64: true,
+
+      getElevation: f => 10,//Math.sqrt(f.properties.valuePerSqm) * 10,
+      getFillColor: f => colorScale(f.properties.GTA06),
+      getLineColor: [255, 255, 255],
+
+      pickable: true,
+      onHover: updateTooltip
+    });
+
+    const arclayer = new ArcLayer({
+       id: 'arc-layer',
+       data: 'https://webspace.ocad.ca/~3158873/outfile_10.json',
+       pickable: true,
+       getWidth: 12,
+       //getFilterValue: d => d.origin,
+       //filterRange: 1,
+       getSourcePosition: d =>  d.origin_pos,
+       getTargetPosition: d => d.desinity_pos,
+       getSourceColor: d => [10, 140, 0],
+       getTargetColor: d => [90, 140, 0],
+       // onHover: ({object, x, y}) => {
+       //   const tooltip = `${object.from.name} to ${object.to.name}`;
+       //   /* Update tooltip
+       //      http://deck.gl/#/documentation/developer-guide/adding-interactivity?section=example-display-a-tooltip-for-hovered-object
+       //   */
+       // }
+     });
+
+
+    new DeckGL({
+      container: 'container',
+      mapboxApiAccessToken: 'pk.eyJ1Ijoibm90Ymxvb20iLCJhIjoiY2pyaWVua3gzMDA4ODN5bXl0ZTU1ejgyOCJ9.e6_za1_NqG7xddmPCXxBAQ',
+      mapStyle: 'mapbox://styles/mapbox/light-v9',
+      latitude: 43.6529,
+      longitude: -79.3849,
+      zoom: 11,
+      maxZoom: 16,
+      pitch: 45,
+      layers: [ arclayer]
+    });
+
+    function colorScale(x) {
+      const i = Math.round(x * 7) + 4;
+      if (x < 0) {
+        return COLOR_SCALE[i] || COLOR_SCALE[0];
+      }
+      return COLOR_SCALE[i] || COLOR_SCALE[COLOR_SCALE.length - 1];
+    }
+
+    function updateTooltip({x, y, object}) {
+      const tooltip = document.getElementById('tooltip');
+
+      if (object) {
+        tooltip.style.top = `${y}px`;
+        tooltip.style.left = `${x}px`;
+        tooltip.innerHTML = `
+    <div><b>Average Property Value &nbsp;</b></div>
+    <div><div>${object.properties.GTA06} / m<sup>2</sup></div></div>
+    <div><b>Growth</b></div>
+    <div></div>
+    `;
+      } else {
+        tooltip.innerHTML = '';
+      }
+    }
+
+  </script>
+</html>
